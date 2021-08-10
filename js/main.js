@@ -20,7 +20,7 @@ async function createViz(){
   const totalNominees = d3.rollup(dataset, v => v.length, d => d.year, d => d.ethnic_background).entries();
 
   for (let i of totalNominees){
-    const year = new Date(parseInt(i[0]),0).getFullYear();
+    const year = new Date(parseInt(i[0]),0);
     const nominees_caucasian = i[1].get('') || 0;
     const nominees_afrodescendant = i[1].get('black') || 0;
     const nominees_hispanic = i[1].get('hispanic') || 0;
@@ -53,7 +53,7 @@ function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendan
       top: 100,
       right: 20,
       bottom: 50,
-      left: 50,
+      left: 25,
     },
   }
 
@@ -102,6 +102,37 @@ function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendan
   .join('path')
   .attr('d', d => stackArea(d))
   .style('fill', d => colorScale(d.key));
+
+  // Generate axes
+
+  const yAxisGenerator = d3.axisLeft().scale(yScale)
+  const xAxisGenerator = d3.axisBottom()
+    .scale(xScale)
+
+
+  const yAxis = bounds.append('g').call(yAxisGenerator).attr('class','axis')
+
+  const xAxis = bounds.append('g')
+  .call(xAxisGenerator)
+  .style('transform', `translateY(${dimensions.boundedHeight}px)`)
+  .attr('class', 'axis')
+
+  xAxis
+  .append('text')
+  .text('Year')
+  .attr('class', 'axis')
+  .style('transform', `translate(${dimensions.boundedWidth}px,${dimensions.margin.bottom}px)`)
+
+  yAxis
+  .append('text')
+  .text('Number of Nominees')
+  .attr('class', 'axis')
+  .style('text-anchor', 'start')
+  .style('transform', `translate(${-dimensions.margin.left}px,${-dimensions.margin.top/4}px)`)
+
+
+
+
 
 };
 

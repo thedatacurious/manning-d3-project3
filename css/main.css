@@ -39,6 +39,19 @@ a {
   color: #45343D;
 }
 
+.axis{
+  font-size: .85rem;
+  font-family: 'Oxygen', sans-serif;
+  color: #29313D;
+}
+
+text.axis {
+  fill: #29313D;
+  font-size: .95rem;
+  font-family: 'Oxygen', sans-serif;
+
+}
+
 .hidden {
   display: none;
 }
