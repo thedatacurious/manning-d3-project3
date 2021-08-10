@@ -51,7 +51,7 @@ function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendan
     height: 600,
     margin: {
       top: 100,
-      right: 20,
+      right: 100,
       bottom: 50,
       left: 25,
     },
@@ -130,8 +130,24 @@ function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendan
   .style('text-anchor', 'start')
   .style('transform', `translate(${-dimensions.margin.left}px,${-dimensions.margin.top/4}px)`)
 
+  // Add color Legend
 
+  const legend = d3.select('div.legend')
+  .style('transform', `translateY(${-dimensions.margin.bottom/3}px)`)
 
+  const entries = legend.append('ul')
+  .selectAll('li')
+  .data(groups)
+  .join('li')
+  .attr('class', 'legend')
+
+  entries.append('span')
+  .attr('class', 'legend-color')
+  .style('background-color', d => d.color)
+
+  entries.append('span')
+  .text(d => d.key.replace('nominees_',''))
+  .attr('class', 'legend')
 
 
 };

@@ -124,6 +124,17 @@ text.axis {
   padding-left: 0;
   list-style: none;
 }
+
+span.legend:first-letter{
+  text-transform: capitalize;
+}
+
+
+span.legend{
+  font-size: .85rem;
+}
+
+
 .legend ul li {
   display: flex;
   align-items: center;
