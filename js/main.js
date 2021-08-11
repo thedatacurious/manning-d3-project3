@@ -47,13 +47,13 @@ function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendan
 
   // Set chart dimensions
   let dimensions = {
-    width: 1160,
+    width: 1150,
     height: 600,
     margin: {
       top: 100,
-      right: 100,
+      right: 150,
       bottom: 50,
-      left: 25,
+      left: 30,
     },
   }
 
@@ -121,7 +121,7 @@ function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendan
   .append('text')
   .text('Year')
   .attr('class', 'axis')
-  .style('transform', `translate(${dimensions.boundedWidth}px,${dimensions.margin.bottom}px)`)
+  .style('transform', `translate(${dimensions.boundedWidth*1.05}px,${dimensions.margin.bottom*.35}px)`)
 
   yAxis
   .append('text')
@@ -148,6 +148,79 @@ function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendan
   entries.append('span')
   .text(d => d.key.replace('nominees_',''))
   .attr('class', 'legend')
+
+  // Create tooltip
+
+  var tooltip = wrapper.append('g')
+  .style('transform', `translate(${dimensions.margin.left}px, ${dimensions.margin.top}px)`)
+
+  tooltip.append('line')
+  .attr('x1',0)
+  .attr('y1',0)
+  .attr('x2',0)
+  .attr('y2', `${dimensions.boundedHeight}`)
+  .attr('stroke', '#DFFE72')
+  .attr('stroke-width',2)
+  .attr('stroke-dasharray', '5,5')
+
+  var tooltipYear = tooltip.append('text')
+  .style('text-anchor', 'middle')
+  .attr('fill', '#45343D')
+  .attr('x', 0)
+  .attr('y', `${dimensions.boundedHeight*1.1}`)
+
+
+  var tooltipNum = tooltip
+  .append('text')
+  .append('tspan')
+  .style('text-anchor', 'start')
+  .attr('fill', '#45343D')
+  .attr('class', 'label')
+
+
+
+  // Add tooltip interactions
+
+  nomineesPath.on('mousemove', e => {
+
+    tooltip.style('transform', `translate(${e.offsetX}px,${dimensions.margin.top}px)`)
+
+    var getYear = xScale.invert(Math.round(e.offsetX)).getFullYear()-2 //to correct for inverted year starting from 1930, not 1928 for some reason
+    tooltipYear.text(getYear)
+
+    dataFiltered = dataFormatted.filter(d => d.year.getFullYear() == getYear)
+
+    let x = 10;
+
+    if(e.offsetX > dimensions.boundedWidth/2){
+      x = -150;
+    }
+
+    tooltipNum
+    .text(`${dataFiltered[0].nominees_total} Total Nominees`)
+    .attr('x',x)
+    .attr('dy', '1.2em')
+    .append('tspan')
+    .text(`${dataFiltered[0].nominees_caucasian} White or Another`)
+    .attr('x',x)
+    .attr('dy', '1.2em')
+    .append('tspan')
+    .text(`${dataFiltered[0].nominees_afrodescendant} Black`)
+    .attr('x',x)
+    .attr('dy', '1.2em')
+    .append('tspan')
+    .text(`${dataFiltered[0].nominees_hispanic} Hispanic`)
+    .attr('x',x)
+    .attr('dy', '1.2em')
+    .append('tspan')
+    .text(`${dataFiltered[0].nominees_asian} Asian`)
+    .attr('x',x)
+    .attr('dy', '1.2em')
+
+  })
+
+
+
 
 
 };
