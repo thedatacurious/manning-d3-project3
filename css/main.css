@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Oxygen:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oxygen:wght@400;&display=swap');
 
 html {
   -webkit-font-smoothing: antialiased;
@@ -69,17 +69,18 @@ text.axis {
 
 /* Filters */
 .filters {
-  margin: 70px 2px 50px 2px;
+  margin: 70px 50px;
 }
 .filters label {
   display: block;
   margin-bottom: 10px;
   font-weight: 700;
 }
+
 .filters select {
   padding: 5px;
   font-family: 'Oxygen', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   color: #FDF9F5;
   font-weight: 700;
   background-color: #45343D;
@@ -112,6 +113,7 @@ text.axis {
   background-color: #45343D;
   border-color: #45343D;
 }
+
 @media screen and (max-width: 768px) {
   .filter {
     margin-bottom: 30px;

@@ -28,7 +28,7 @@ async function createViz(){
   let dataOriginal = dataset
 
   // Format dataset to get total and breakdown of nominees
-
+  let xAccessor = d => d.year;
   let dataFormatted = getBreakdown(dataset);
 
   let w = parseInt(d3.select('.container').style('width'));
@@ -39,13 +39,13 @@ async function createViz(){
 
   // Initialise svg
 
-  let wrapper = d3.select('#viz')
+  const wrapper = d3.select('#viz')
   .append('svg')
   .attr('width', dimensions.width)
   .attr('height', dimensions.height);
 
-  let bounds = wrapper.append('g')
-  .style('transform', `translate(${dimensions.margin.left}px,  ${dimensions.margin.top}px)`);
+  const bounds = wrapper.append('g')
+    .style('transform', `translate(${dimensions.margin.left}px, ${dimensions.margin.top}px)`)
 
   let clipRect = bounds
   .append('defs')
@@ -61,10 +61,14 @@ async function createViz(){
 
   const colorScale = d3.scaleOrdinal().domain(groups.map(d=> d.key)).range(groups.map(d => d.color))
 
-  let xScale = d3.scaleTime().domain(d3.extent(dataFormatted.map(d=> d.year))).range([0,dimensions.boundedWidth])
-  console.log(d3.extent(dataFormatted.map(d=> d.year)))
+  let xScale = d3.scaleLinear()
+  .domain(d3.extent(dataFormatted,xAccessor))
+  .range([0,dimensions.boundedWidth])
 
-  let yScale = d3.scaleLinear().domain([0, d3.max(dataFormatted.map(d => d.nominees_total))]).range([dimensions.boundedHeight,0])
+  let yScale = d3.scaleLinear()
+  .domain([0, d3.max(dataFormatted.map(d => d.nominees_total))])
+  .range([dimensions.boundedHeight,0])
+  .nice()
 
   const stack = d3.stack()
   .keys(groups.map(d=> d.key))
@@ -98,7 +102,7 @@ async function createViz(){
   //// Get max y value
 
   const yAxisGenerator = d3.axisLeft().scale(yScale).tickFormat(d => d % 1 == 0 ? d3.format('.0f')(d) : '')
-  const xAxisGenerator = d3.axisBottom().scale(xScale)
+  const xAxisGenerator = d3.axisBottom().scale(xScale).tickFormat(d3.format('d'))
 
 
   const yAxis = bounds.append('g').call(yAxisGenerator).attr('class','axis')
@@ -112,14 +116,14 @@ async function createViz(){
   .append('text')
   .text('Year')
   .attr('class', 'axis')
-  .style('transform', `translate(${dimensions.boundedWidth}px,${dimensions.margin.bottom}px)`)
+  .style('transform', `translate(${dimensions.boundedWidth}px,${dimensions.margin.bottom*.95}px)`)
 
   yAxis
   .append('text')
   .text('Number of Nominees')
   .attr('class', 'axis')
   .style('text-anchor', 'start')
-  .style('transform', `translate(${-dimensions.margin.left}px,${-dimensions.margin.top/4}px)`)
+  .style('transform', `translateY(${-dimensions.margin.top/4}px)`)
 
   // Add color Legend
 
@@ -142,14 +146,13 @@ async function createViz(){
 
   // Create tooltip
 
-  var tooltip = wrapper.append('g')
-  .style('transform', `translate(${dimensions.margin.left}px, ${dimensions.margin.top}px)`)
+  var tooltip = bounds.append('g')
 
   tooltip.append('line')
   .attr('x1',0)
   .attr('y1',0)
   .attr('x2',0)
-  .attr('y2', `${dimensions.boundedHeight}`)
+  .attr('y2', dimensions.boundedHeight)
   .attr('stroke', '#DFFE72')
   .attr('stroke-width',3)
   .attr('stroke-dasharray', '5,5')
@@ -173,12 +176,13 @@ async function createViz(){
 
   nomineesPath.on('mousemove', e => {
 
-    tooltip.style('transform', `translate(${e.offsetX}px,${dimensions.margin.top}px)`)
+    tooltip.style('transform', `translateX(${e.offsetX-dimensions.margin.left}px)`) // To counter additional shift that's done
 
-    var getYear = xScale.invert(Math.round(e.offsetX)).getFullYear() //to correct for inverted year starting from 1930, not 1928 for some reason
+    var getYear = Math.round(xScale.invert(e.offsetX-dimensions.margin.left))
     tooltipYear.text(getYear)
 
-    let dataFiltered = dataFormatted.filter(d => d.year.getFullYear() == getYear)
+    let dataFiltered = dataFormatted.filter(d => d.year == getYear)
+
 
     let x = 10;
 
@@ -230,8 +234,11 @@ async function createViz(){
 
   })
 
-  const minYear = d3.min(dataFormatted.map(d=> d.year.getFullYear()))
-  const maxYear = d3.max(dataFormatted.map(d=> d.year.getFullYear()))
+  years = dataFormatted.map(xAccessor);
+  const minYear = d3.min(years)
+  const maxYear = d3.max(years)
+
+  console.log(typeof minYear)
 
   //// Add slider for date range
   const yearsSlider = new rSlider({
@@ -247,11 +254,11 @@ async function createViz(){
 
 
       // Update scale and xAxis according to selected date range
-      xScale.domain([new Date(newMin), new Date(newMax)]);
+      xScale.domain([parseInt(newMin), parseInt(newMax)]);
       xAxis.transition().duration(600).call(xAxisGenerator)
 
       // Redraw chart
-      nomineesPath.data(series)
+      nomineesPath
       .transition()
       .duration(600)
       .attr('d', d => areaGenerator(d))
@@ -281,7 +288,7 @@ async function createViz(){
         top: 80,
         right: 100,
         bottom: 60,
-        left: 30,
+        left: 50,
       },
     }
 
@@ -299,7 +306,7 @@ async function createViz(){
   let arrayEntry = []
 
   for (let i of totalNominees){
-    const year = new Date(parseInt(i[0]),0);
+    const year = parseInt(i[0]);
     const nominees_caucasian = i[1].get('') || 0;
     const nominees_black = i[1].get('black') || 0;
     const nominees_hispanic = i[1].get('hispanic') || 0;
@@ -340,7 +347,7 @@ async function createViz(){
     series = stack(dataFormatted);
 
     // Update streamgraph paths
-    nomineesPath.data(series)
+    nomineesPath
     .transition()
     .duration(600)
     .attr('d', d => areaGenerator(d))
@@ -357,7 +364,8 @@ async function createViz(){
 
     // Update scale and xAxis
     xScale.range([0, dimensions.boundedWidth]);
-    xAxis.transition().duration(600).call(xAxisGenerator);
+    newWidth < 600 ? xAxis.transition().duration(600).call(xAxisGenerator.ticks(5))
+    : xAxis.transition().duration(600).call(xAxisGenerator)
 
     // Update streamgraph paths
     nomineesPath.data(series)
