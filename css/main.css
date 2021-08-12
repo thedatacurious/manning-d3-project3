@@ -114,6 +114,7 @@ text.axis {
   border-color: #45343D;
 }
 
+
 @media screen and (max-width: 768px) {
   .filter {
     margin-bottom: 30px;

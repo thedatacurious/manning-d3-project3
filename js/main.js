@@ -248,7 +248,7 @@ async function createViz(){
      tooltip: true,
      scale: true,
      labels: false,
-     set: [minYear,maxYear], // Set the initial values here
+     set: [minYear,maxYear+1], // Set the initial values here
      onChange: values => {
        [newMin, newMax] = values.split(',')
 
@@ -348,6 +348,7 @@ async function createViz(){
 
     // Update streamgraph paths
     nomineesPath
+    .data(series)
     .transition()
     .duration(600)
     .attr('d', d => areaGenerator(d))
@@ -369,13 +370,13 @@ async function createViz(){
 
     xAxisLabel.style('transform', `translate(${dimensions.boundedWidth}px,${dimensions.margin.bottom*.95}px)`)
 
-
-
     // Update streamgraph paths
     nomineesPath.data(series)
     .transition()
     .duration(600)
     .attr('d', d => areaGenerator(d))
+
+
 
   }
 
