@@ -87,13 +87,23 @@ async function createViz(){
   const bounds = wrapper.append('g')
   .style('transform', `translate(${dimensions.margin.left}px,  ${dimensions.margin.top}px)`)
 
+  bounds
+  .append('defs')
+  .append('clipPath')
+  .attr('id','clipPath1')
+  .append('rect')
+  .attr('x',0)
+  .attr('y',0)
+  .attr('width', dimensions.boundedWidth)
+  .attr('height', dimensions.boundedHeight)
+
   // Create scale
 
   const colorScale = d3.scaleOrdinal().domain(groups.map(d=> d.key)).range(groups.map(d => d.color))
 
-  const xScale = d3.scaleTime().domain(d3.extent(dataFormatted.map(d=> d.year))).range([0,dimensions.boundedWidth])
+  let xScale = d3.scaleTime().domain(d3.extent(dataFormatted.map(d=> d.year))).range([0,dimensions.boundedWidth])
 
-  const yScale = d3.scaleLinear().domain([0, d3.max(dataFormatted.map(d => d.nominees_total))]).range([dimensions.boundedHeight,0])
+  let yScale = d3.scaleLinear().domain([0, d3.max(dataFormatted.map(d => d.nominees_total))]).range([dimensions.boundedHeight,0])
 
   const stack = d3.stack()
   .keys(groups.map(d=> d.key))
@@ -113,6 +123,7 @@ async function createViz(){
 
   // Draw dataset
   const nomineesPath = bounds.append('g')
+  .style('clip-path', 'url(#clipPath1)')
   .attr('class', 'stream-paths')
   .selectAll('path')
   .data(series)
@@ -120,9 +131,12 @@ async function createViz(){
   .attr('d', d => areaGenerator(d))
   .style('fill', d => colorScale(d.key));
 
+
   // Generate axes
 
-  const yAxisGenerator = d3.axisLeft().scale(yScale)
+  //// Get max y value
+
+  const yAxisGenerator = d3.axisLeft().scale(yScale).tickFormat(d => d % 1 == 0 ? d3.format('.0f')(d) : '')
   const xAxisGenerator = d3.axisBottom()
     .scale(xScale)
 
@@ -268,6 +282,10 @@ async function createViz(){
     // Format data
     dataFormatted = getBreakdown(dataFiltered);
 
+    // Update scale and yAxis according to new nominees count range
+    yScale.domain([0, d3.max(dataFormatted.map(d => d.nominees_total))]);
+    yAxis.transition().duration(600).call(yAxisGenerator)
+
     // Stack data
     series = stack(dataFormatted);
 
@@ -276,7 +294,42 @@ async function createViz(){
     .transition()
     .duration(600)
     .attr('d', d => areaGenerator(d))
+
+
   }
+
+  const minYear = d3.min(dataFormatted.map(d=> d.year.getFullYear()))
+  const maxYear = d3.max(dataFormatted.map(d=> d.year.getFullYear()))
+
+  //// Add slider for date range
+  const yearsSlider = new rSlider({
+     target: '#yearsSlider',
+     values: d3.range(minYear, maxYear+1), // Set the values array here
+     range: true,
+     tooltip: true,
+     scale: true,
+     labels: false,
+     set: [], // Set the initial values here
+     onChange: values => {
+       [newMin, newMax] = values.split(',')
+
+
+      // Update scale and xAxis according to selected date range
+      xScale.domain([new Date(newMin), new Date(newMax)]);
+      xAxis.transition().duration(600).call(xAxisGenerator)
+
+      // Redraw chart
+      nomineesPath.data(series)
+      .transition()
+      .duration(600)
+      .attr('d', d => areaGenerator(d))
+
+
+
+     }
+  });
+
+
 
 
 
