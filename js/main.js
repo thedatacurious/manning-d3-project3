@@ -8,8 +8,6 @@ const groups = [
   { key: 'nominees_asian', label: 'asian', color: '#0B4F6C' },
 ];
 
-  let dataFormatted = [];
-
   // Create your visualization here
 async function createViz(){
 
@@ -17,7 +15,31 @@ async function createViz(){
 
 
   const dataset = await d3.csv('./data/academy_awards_nominees.csv')
-  const totalNominees = d3.rollup(dataset, v => v.length, d => d.year, d => d.ethnic_background).entries();
+
+  // Create array for dropdown options
+  let awards = [{id: 'all', label: 'All'}]
+  dataset.forEach( d => {
+     let awardEntry = {}
+      awardEntry['id'] = d.award_id
+      awardEntry['label'] = d.award_label
+
+      const found = awards.some(entry => entry.id === d.award_id)
+
+      if (!found){awards.push(awardEntry)}
+
+  })
+
+  console.log(awards)
+
+  let dataOriginal = dataset
+
+  // Format dataset to get total and breakdown of nominees
+  let dataFormatted = getBreakdown(dataset);
+
+  // helper functions for formatting dataset
+  function getBreakdown(data){
+  const totalNominees = d3.rollup(data, v => v.length, d => d.year, d => d.ethnic_background).entries();
+  let arrayEntry = []
 
   for (let i of totalNominees){
     const year = new Date(parseInt(i[0]),0);
@@ -28,22 +50,19 @@ async function createViz(){
     const nominees_total = nominees_caucasian + nominees_afrodescendant + nominees_hispanic + nominees_asian;
 
     let entryFormatted = new Nominees(year,nominees_total, nominees_caucasian, nominees_afrodescendant,nominees_hispanic,nominees_asian)
-    dataFormatted.push(entryFormatted)
-
-    // console.log(year,nominees_total, nominees_caucasian, nominees_afrodescendant,nominees_hispanic,nominees_asian)
+    arrayEntry.push(entryFormatted)
+    }
+    return arrayEntry;
   }
 
-
-
-
-function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendant,nominees_hispanic,nominees_asian){
-  this.year = year;
-  this.nominees_total = nominees_total;
-  this.nominees_caucasian = nominees_caucasian;
-  this.nominees_afrodescendant = nominees_afrodescendant;
-  this.nominees_hispanic = nominees_hispanic;
-  this.nominees_asian = nominees_asian;
-}
+  function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendant,nominees_hispanic,nominees_asian){
+    this.year = year;
+    this.nominees_total = nominees_total;
+    this.nominees_caucasian = nominees_caucasian;
+    this.nominees_afrodescendant = nominees_afrodescendant;
+    this.nominees_hispanic = nominees_hispanic;
+    this.nominees_asian = nominees_asian;
+  }
 
   // Set chart dimensions
   let dimensions = {
@@ -86,21 +105,19 @@ function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendan
 
   // Area generator
 
-  const stackArea = d3.area() // Each array in series rep an ethnicity will be fed to areaGenerator
+  const areaGenerator = d3.area() // Each array in series rep an ethnicity will be fed to areaGenerator
   .x(d => xScale(d.data.year))
   .y0(d => yScale(d[0]))
   .y1(d => yScale(d[1]))
   .curve(d3.curveCatmullRom)
 
   // Draw dataset
-
-
   const nomineesPath = bounds.append('g')
   .attr('class', 'stream-paths')
   .selectAll('path')
   .data(series)
   .join('path')
-  .attr('d', d => stackArea(d))
+  .attr('d', d => areaGenerator(d))
   .style('fill', d => colorScale(d.key));
 
   // Generate axes
@@ -218,6 +235,50 @@ function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendan
     .attr('dy', '1.2em')
 
   })
+
+  // Additional interactions
+
+  //// Add dropdown options to select element
+  const dropDown = d3.select('#selectAward')
+
+  dropDown
+  .selectAll('option')
+  .data(awards)
+  .join('option')
+  .attr('value', d => d.id)
+  .text(d => d.label)
+
+  //// Add event listener to select element, NOT option elements
+  dropDown.on('change', ()  => {
+    // Read current selection
+    const selectedAward = dropDown.property('value')
+    // Run update function
+    update(selectedAward)
+
+  })
+
+
+  //// helper function to update the chart
+  function update(selection){
+    // Filter data according to selection
+    let dataFiltered = selection === 'all'
+    ?  dataOriginal
+    : dataOriginal.filter(d => d.award_id === selection);
+
+    // Format data
+    dataFormatted = getBreakdown(dataFiltered);
+
+    // Stack data
+    series = stack(dataFormatted);
+
+    // Pass new data to the drawing method
+    nomineesPath.data(series)
+    .transition()
+    .duration(600)
+    .attr('d', d => areaGenerator(d))
+  }
+
+
 
 
 
