@@ -1,6 +1,3 @@
-// const margin = {top: 100, right: 20, bottom: 50, left: 50};
-// const width = 1160;
-// const height = 600;
 const groups = [
   { key: 'nominees_caucasian', label: 'caucasian or another', color: '#9BC4CB' },
   { key: 'nominees_black', label: 'black', color: '#BDA0BC' },
@@ -12,8 +9,6 @@ const groups = [
 async function createViz(){
 
 // Load the data here
-
-
   const dataset = await d3.csv('./data/academy_awards_nominees.csv')
 
   // Create array for dropdown options
@@ -33,63 +28,26 @@ async function createViz(){
   let dataOriginal = dataset
 
   // Format dataset to get total and breakdown of nominees
+
   let dataFormatted = getBreakdown(dataset);
 
-  // helper functions for formatting dataset
-  function getBreakdown(data){
-  const totalNominees = d3.rollup(data, v => v.length, d => d.year, d => d.ethnic_background).entries();
-
-  let arrayEntry = []
-
-  for (let i of totalNominees){
-    const year = new Date(parseInt(i[0]),0);
-    const nominees_caucasian = i[1].get('') || 0;
-    const nominees_black = i[1].get('black') || 0;
-    const nominees_hispanic = i[1].get('hispanic') || 0;
-    const nominees_asian = i[1].get('asian') || 0;
-    const nominees_total = nominees_caucasian + nominees_black + nominees_hispanic + nominees_asian;
-
-    let entryFormatted = new Nominees(year,nominees_total, nominees_caucasian, nominees_black,nominees_hispanic,nominees_asian)
-    arrayEntry.push(entryFormatted)
-    }
-    return arrayEntry;
-  }
-
-  function Nominees(year,nominees_total,nominees_caucasian, nominees_black,nominees_hispanic,nominees_asian){
-    this.year = year;
-    this.nominees_total = nominees_total;
-    this.nominees_caucasian = nominees_caucasian;
-    this.nominees_black = nominees_black;
-    this.nominees_hispanic = nominees_hispanic;
-    this.nominees_asian = nominees_asian;
-  }
-
-  let w = window.innerWidth *.8;
+  let w = parseInt(d3.select('.container').style('width'));
 
   // Set chart dimensions
-  let dimensions = {
-    width: w,
-    height: 600,
-    margin: {
-      top: 100,
-      right: 100,
-      bottom: 50,
-      left: 30,
-    },
-  }
 
-  dimensions.boundedWidth = dimensions.width - dimensions.margin.left - dimensions.margin.right
-  dimensions.boundedHeight = dimensions.height - dimensions.margin.top - dimensions.margin.bottom
+  let dimensions = setDimensions(w);
 
-  const wrapper = d3.select('#viz')
+  // Initialise svg
+
+  let wrapper = d3.select('#viz')
   .append('svg')
   .attr('width', dimensions.width)
-  .attr('height', dimensions.height)
+  .attr('height', dimensions.height);
 
-  const bounds = wrapper.append('g')
-  .style('transform', `translate(${dimensions.margin.left}px,  ${dimensions.margin.top}px)`)
+  let bounds = wrapper.append('g')
+  .style('transform', `translate(${dimensions.margin.left}px,  ${dimensions.margin.top}px)`);
 
-  bounds
+  let clipRect = bounds
   .append('defs')
   .append('clipPath')
   .attr('id','clipPath1')
@@ -97,13 +55,14 @@ async function createViz(){
   .attr('x',0)
   .attr('y',0)
   .attr('width', dimensions.boundedWidth)
-  .attr('height', dimensions.boundedHeight)
+  .attr('height', dimensions.boundedHeight);
 
   // Create scale
 
   const colorScale = d3.scaleOrdinal().domain(groups.map(d=> d.key)).range(groups.map(d => d.color))
 
   let xScale = d3.scaleTime().domain(d3.extent(dataFormatted.map(d=> d.year))).range([0,dimensions.boundedWidth])
+  console.log(d3.extent(dataFormatted.map(d=> d.year)))
 
   let yScale = d3.scaleLinear().domain([0, d3.max(dataFormatted.map(d => d.nominees_total))]).range([dimensions.boundedHeight,0])
 
@@ -139,8 +98,7 @@ async function createViz(){
   //// Get max y value
 
   const yAxisGenerator = d3.axisLeft().scale(yScale).tickFormat(d => d % 1 == 0 ? d3.format('.0f')(d) : '')
-  const xAxisGenerator = d3.axisBottom()
-    .scale(xScale)
+  const xAxisGenerator = d3.axisBottom().scale(xScale)
 
 
   const yAxis = bounds.append('g').call(yAxisGenerator).attr('class','axis')
@@ -154,7 +112,7 @@ async function createViz(){
   .append('text')
   .text('Year')
   .attr('class', 'axis')
-  .style('transform', `translate(${dimensions.boundedWidth*1.05}px,${dimensions.margin.bottom*.35}px)`)
+  .style('transform', `translate(${dimensions.boundedWidth}px,${dimensions.margin.bottom}px)`)
 
   yAxis
   .append('text')
@@ -193,7 +151,7 @@ async function createViz(){
   .attr('x2',0)
   .attr('y2', `${dimensions.boundedHeight}`)
   .attr('stroke', '#DFFE72')
-  .attr('stroke-width',2)
+  .attr('stroke-width',3)
   .attr('stroke-dasharray', '5,5')
 
   var tooltipYear = tooltip.append('text')
@@ -217,10 +175,10 @@ async function createViz(){
 
     tooltip.style('transform', `translate(${e.offsetX}px,${dimensions.margin.top}px)`)
 
-    var getYear = xScale.invert(Math.round(e.offsetX)).getFullYear()-2 //to correct for inverted year starting from 1930, not 1928 for some reason
+    var getYear = xScale.invert(Math.round(e.offsetX)).getFullYear() //to correct for inverted year starting from 1930, not 1928 for some reason
     tooltipYear.text(getYear)
 
-    dataFiltered = dataFormatted.filter(d => d.year.getFullYear() == getYear)
+    let dataFiltered = dataFormatted.filter(d => d.year.getFullYear() == getYear)
 
     let x = 10;
 
@@ -268,36 +226,9 @@ async function createViz(){
     // Read current selection
     const selectedAward = dropDown.property('value')
     // Run update function
-    update(selectedAward)
+    update(selectedAward);
 
   })
-
-
-  //// helper function to update the chart
-  function update(selection){
-    // Filter data according to selection
-    let dataFiltered = selection === 'all'
-    ?  dataOriginal
-    : dataOriginal.filter(d => d.award_id === selection);
-
-    // Format data
-    dataFormatted = getBreakdown(dataFiltered);
-
-    // Update scale and yAxis according to new nominees count range
-    yScale.domain([0, d3.max(dataFormatted.map(d => d.nominees_total))]);
-    yAxis.transition().duration(600).call(yAxisGenerator)
-
-    // Stack data
-    series = stack(dataFormatted);
-
-    // Pass new data to the drawing method
-    nomineesPath.data(series)
-    .transition()
-    .duration(600)
-    .attr('d', d => areaGenerator(d))
-
-
-  }
 
   const minYear = d3.min(dataFormatted.map(d=> d.year.getFullYear()))
   const maxYear = d3.max(dataFormatted.map(d=> d.year.getFullYear()))
@@ -330,12 +261,111 @@ async function createViz(){
      }
   });
 
+  //// Add event listener to re-render chart upon window size changes
+  d3.select(window).on('resize', ()  => {
+    // Read current selection
+    let w = parseInt(d3.select('.container').style('width'));
+    // Run update function
+    resizing(w);
+
+  })
+
+  // Helper functions
+
+  //// For setting dimensions
+  function setDimensions(w){
+    let dimensions = {
+      width: w,
+      height: 500,
+      margin: {
+        top: 80,
+        right: 100,
+        bottom: 60,
+        left: 30,
+      },
+    }
+
+    dimensions.boundedWidth = dimensions.width - dimensions.margin.left - dimensions.margin.right
+    dimensions.boundedHeight = dimensions.height - dimensions.margin.top - dimensions.margin.bottom
+
+    return dimensions;
+
+  }
+
+  //// For formatting dataset
+  function getBreakdown(data){
+  const totalNominees = d3.rollup(data, v => v.length, d => d.year, d => d.ethnic_background).entries();
+
+  let arrayEntry = []
+
+  for (let i of totalNominees){
+    const year = new Date(parseInt(i[0]),0);
+    const nominees_caucasian = i[1].get('') || 0;
+    const nominees_black = i[1].get('black') || 0;
+    const nominees_hispanic = i[1].get('hispanic') || 0;
+    const nominees_asian = i[1].get('asian') || 0;
+    const nominees_total = nominees_caucasian + nominees_black + nominees_hispanic + nominees_asian;
+
+    let entryFormatted = new Nominees(year,nominees_total, nominees_caucasian, nominees_black,nominees_hispanic,nominees_asian)
+    arrayEntry.push(entryFormatted)
+    }
+    return arrayEntry;
+  }
+
+  //// For creating new Nominees object
+  function Nominees(year,nominees_total,nominees_caucasian, nominees_black,nominees_hispanic,nominees_asian){
+    this.year = year;
+    this.nominees_total = nominees_total;
+    this.nominees_caucasian = nominees_caucasian;
+    this.nominees_black = nominees_black;
+    this.nominees_hispanic = nominees_hispanic;
+    this.nominees_asian = nominees_asian;
+  }
+
+  //// For updating the chart upon award category selection
+  function update(selection){
+    // Filter data according to selection
+    let dataFiltered = selection === 'all'
+    ?  dataOriginal
+    : dataOriginal.filter(d => d.award_id === selection);
+
+    // Format data
+    dataFormatted = getBreakdown(dataFiltered);
+
+    // Update scale and yAxis according to new nominees count range
+    yScale.domain([0, d3.max(dataFormatted.map(d => d.nominees_total))]);
+    yAxis.transition().duration(600).call(yAxisGenerator)
+
+    // Stack data
+    series = stack(dataFormatted);
+
+    // Update streamgraph paths
+    nomineesPath.data(series)
+    .transition()
+    .duration(600)
+    .attr('d', d => areaGenerator(d))
+  }
+
+  //// For resizing chart
+  function  resizing(newWidth){
+    // Update chart and clip dimensions
+    dimensions = setDimensions(newWidth);
+    wrapper.attr('width', dimensions.width);
+    bounds.attr('width', dimensions.boundedWidth);
+    clipRect.attr('width', dimensions.boundedWidth);
 
 
+    // Update scale and xAxis
+    xScale.range([0, dimensions.boundedWidth]);
+    xAxis.transition().duration(600).call(xAxisGenerator);
 
+    // Update streamgraph paths
+    nomineesPath.data(series)
+    .transition()
+    .duration(600)
+    .attr('d', d => areaGenerator(d))
 
-
-
+  }
 
 
 };

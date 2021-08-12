@@ -69,7 +69,7 @@ text.axis {
 
 /* Filters */
 .filters {
-  margin: 70px 0 50px;
+  margin: 70px 2px 50px 2px;
 }
 .filters label {
   display: block;
