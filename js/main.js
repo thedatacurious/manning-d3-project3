@@ -3,7 +3,7 @@
 // const height = 600;
 const groups = [
   { key: 'nominees_caucasian', label: 'caucasian or another', color: '#9BC4CB' },
-  { key: 'nominees_afrodescendant', label: 'afrodescendant', color: '#BDA0BC' },
+  { key: 'nominees_black', label: 'black', color: '#BDA0BC' },
   { key: 'nominees_hispanic', label: 'hispanic', color: '#A2708A' },
   { key: 'nominees_asian', label: 'asian', color: '#0B4F6C' },
 ];
@@ -29,7 +29,6 @@ async function createViz(){
 
   })
 
-  console.log(awards)
 
   let dataOriginal = dataset
 
@@ -39,27 +38,28 @@ async function createViz(){
   // helper functions for formatting dataset
   function getBreakdown(data){
   const totalNominees = d3.rollup(data, v => v.length, d => d.year, d => d.ethnic_background).entries();
+
   let arrayEntry = []
 
   for (let i of totalNominees){
     const year = new Date(parseInt(i[0]),0);
     const nominees_caucasian = i[1].get('') || 0;
-    const nominees_afrodescendant = i[1].get('black') || 0;
+    const nominees_black = i[1].get('black') || 0;
     const nominees_hispanic = i[1].get('hispanic') || 0;
     const nominees_asian = i[1].get('asian') || 0;
-    const nominees_total = nominees_caucasian + nominees_afrodescendant + nominees_hispanic + nominees_asian;
+    const nominees_total = nominees_caucasian + nominees_black + nominees_hispanic + nominees_asian;
 
-    let entryFormatted = new Nominees(year,nominees_total, nominees_caucasian, nominees_afrodescendant,nominees_hispanic,nominees_asian)
+    let entryFormatted = new Nominees(year,nominees_total, nominees_caucasian, nominees_black,nominees_hispanic,nominees_asian)
     arrayEntry.push(entryFormatted)
     }
     return arrayEntry;
   }
 
-  function Nominees(year,nominees_total,nominees_caucasian, nominees_afrodescendant,nominees_hispanic,nominees_asian){
+  function Nominees(year,nominees_total,nominees_caucasian, nominees_black,nominees_hispanic,nominees_asian){
     this.year = year;
     this.nominees_total = nominees_total;
     this.nominees_caucasian = nominees_caucasian;
-    this.nominees_afrodescendant = nominees_afrodescendant;
+    this.nominees_black = nominees_black;
     this.nominees_hispanic = nominees_hispanic;
     this.nominees_asian = nominees_asian;
   }
@@ -222,7 +222,7 @@ async function createViz(){
     .attr('x',x)
     .attr('dy', '1.2em')
     .append('tspan')
-    .text(`${dataFiltered[0].nominees_afrodescendant} Black`)
+    .text(`${dataFiltered[0].nominees_black} Black`)
     .attr('x',x)
     .attr('dy', '1.2em')
     .append('tspan')
