@@ -64,13 +64,15 @@ async function createViz(){
     this.nominees_asian = nominees_asian;
   }
 
+  let w = window.innerWidth *.8;
+
   // Set chart dimensions
   let dimensions = {
-    width: 1150,
+    width: w,
     height: 600,
     margin: {
       top: 100,
-      right: 150,
+      right: 100,
       bottom: 50,
       left: 30,
     },
@@ -164,7 +166,7 @@ async function createViz(){
   // Add color Legend
 
   const legend = d3.select('div.legend')
-  .style('transform', `translateY(${-dimensions.margin.bottom/3}px)`)
+  .style('transform', `translateY(${-dimensions.margin.bottom/2}px)`)
 
   const entries = legend.append('ul')
   .selectAll('li')
@@ -199,7 +201,6 @@ async function createViz(){
   .attr('fill', '#45343D')
   .attr('x', 0)
   .attr('y', `${dimensions.boundedHeight*1.1}`)
-
 
   var tooltipNum = tooltip
   .append('text')
@@ -309,7 +310,7 @@ async function createViz(){
      tooltip: true,
      scale: true,
      labels: false,
-     set: [], // Set the initial values here
+     set: [minYear,maxYear], // Set the initial values here
      onChange: values => {
        [newMin, newMax] = values.split(',')
 
