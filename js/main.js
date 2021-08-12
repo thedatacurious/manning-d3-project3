@@ -112,8 +112,8 @@ async function createViz(){
   .style('transform', `translateY(${dimensions.boundedHeight}px)`)
   .attr('class', 'axis')
 
-  xAxis
-  .append('text')
+  const xAxisLabel =
+  xAxis.append('text')
   .text('Year')
   .attr('class', 'axis')
   .style('transform', `translate(${dimensions.boundedWidth}px,${dimensions.margin.bottom*.95}px)`)
@@ -366,6 +366,10 @@ async function createViz(){
     xScale.range([0, dimensions.boundedWidth]);
     newWidth < 600 ? xAxis.transition().duration(600).call(xAxisGenerator.ticks(5))
     : xAxis.transition().duration(600).call(xAxisGenerator)
+
+    xAxisLabel.style('transform', `translate(${dimensions.boundedWidth}px,${dimensions.margin.bottom*.95}px)`)
+
+
 
     // Update streamgraph paths
     nomineesPath.data(series)
